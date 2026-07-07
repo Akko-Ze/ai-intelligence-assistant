@@ -1,3 +1,4 @@
+import time
 from openai import OpenAI
 from app.core.config import settings
 import logging
@@ -16,13 +17,20 @@ class LLMClient:
 
     def chat(self, messages: list[dict]) -> str:
         logger.info("calling LLM model=%s", settings.LLM_MODEL)
-        response = self.client.chat.completions.create(
-            model=settings.LLM_MODEL,
-            messages=messages
-        )
-        logger.info("LLM request completed")
+        start = time.perf_counter()
+        try:
+            response = self.client.chat.completions.create(
+                model=settings.LLM_MODEL,
+                messages=messages
+            )
+            elapsed = time.perf_counter() - start
+            logger.info("LLM request completed, elapsed time: %2.f秒", elapsed)
+            return response.choices[0].message.content
+        except Exception:
+            logger.exception("LLM request failed, model: %s", settings.LLM_MODEL)
+            raise
 
-        return response.choices[0].message.content
+
 
 
 llm = LLMClient()
